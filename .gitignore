@@ -4,8 +4,8 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/gradle/wrapper/gradle-wrapper.jar
 
-# Maven (на случай побочной сборки/остатков)
 target/
+.mvn/
 
 # IntelliJ IDEA
 .idea/

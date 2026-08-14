@@ -1,7 +1,7 @@
-package com.training.resourceservice.services;
+package com.example.resourceservice.services;
 
-import com.training.resourceservice.entities.ResourceEntity;
-import com.training.resourceservice.repositories.ResourceRepository;
+import com.example.resourceservice.entities.ResourceEntity;
+import com.example.resourceservice.repositories.ResourceRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 

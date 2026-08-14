@@ -1,8 +1,7 @@
-package com.training.controllers;
+package com.example.controllers;
 
-import com.training.resourceservice.entities.ResourceEntity;
-import com.training.resourceservice.services.ResourceService;
-import org.springframework.http.HttpStatus;
+import com.example.resourceservice.entities.ResourceEntity;
+import com.example.resourceservice.services.ResourceService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;

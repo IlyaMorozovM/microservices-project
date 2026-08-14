@@ -18,7 +18,7 @@ import lombok.Setter;
 public class Song {
 
     @Id
-    private Long id; // со��падает с Resource ID из Resource Service
+    private Long id;
 
     @Column(nullable = false, length = 100)
     private String name;
@@ -30,8 +30,8 @@ public class Song {
     private String album;
 
     @Column(nullable = false, length = 5)
-    private String duration; // формат mm:ss
+    private String duration;
 
     @Column(nullable = false, length = 4)
-    private String year; // формат YYYY
+    private String year;
 }

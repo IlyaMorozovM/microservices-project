@@ -1,4 +1,4 @@
-package com.training.resourceservice.entities;
+package com.example.resourceservice.entities;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -17,7 +17,7 @@ public class ResourceEntity {
     private Long id;
 
     @Lob
-    private byte[] audioData; // MP3 файл в бинарном формате
+    private byte[] audioData;
 
     public Long getId() {
         return id;
