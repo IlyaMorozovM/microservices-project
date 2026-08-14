@@ -1,0 +1,30 @@
+services:
+  resource-service-db:
+    image: postgres:16-alpine
+    container_name: resource-service-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: resource_service_db
+      POSTGRES_USER: resource_user
+      POSTGRES_PASSWORD: resource_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - resource_service_data:/var/lib/postgresql/data
+
+  song-service-db:
+    image: postgres:16-alpine
+    container_name: song-service-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: song_service_db
+      POSTGRES_USER: song_user
+      POSTGRES_PASSWORD: song_pass
+    ports:
+      - "5434:5432"
+    volumes:
+      - song_service_data:/var/lib/postgresql/data
+
+volumes:
+  resource_service_data:
+  song_service_data:
