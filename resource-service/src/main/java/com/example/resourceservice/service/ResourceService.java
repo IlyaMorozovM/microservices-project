@@ -4,7 +4,7 @@ import java.util.List;
 
 public interface ResourceService {
 
-    Long uploadResource(byte[] audioData);
+    Long uploadResource(byte[] audioData, String contentType);
 
     byte[] getResourceById(Long id);
 

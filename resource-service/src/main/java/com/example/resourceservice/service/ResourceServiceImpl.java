@@ -4,6 +4,7 @@ import com.example.resourceservice.client.SongServiceClient;
 import com.example.resourceservice.dto.SongMetadataDto;
 import com.example.resourceservice.entity.Resource;
 import com.example.resourceservice.exception.BadRequestException;
+import com.example.resourceservice.exception.InvalidMp3FileException;
 import com.example.resourceservice.exception.ResourceNotFoundException;
 import com.example.resourceservice.exception.SongServiceIntegrationException;
 import com.example.resourceservice.repository.ResourceRepository;
@@ -19,6 +20,7 @@ import java.util.List;
 public class ResourceServiceImpl implements ResourceService {
 
     private static final int MAX_CSV_LENGTH = 200;
+    private static final String MP3_CONTENT_TYPE = "audio/mpeg";
 
     private final ResourceRepository resourceRepository;
     private final Mp3MetadataExtractor metadataExtractor;
@@ -26,7 +28,9 @@ public class ResourceServiceImpl implements ResourceService {
 
     @Override
     @Transactional
-    public Long uploadResource(byte[] audioData) {
+    public Long uploadResource(byte[] audioData, String contentType) {
+        validateContentType(contentType);
+
         SongMetadataDto metadata = metadataExtractor.extract(audioData);
 
         Resource resource = new Resource();
@@ -38,8 +42,6 @@ public class ResourceServiceImpl implements ResourceService {
         try {
             songServiceClient.createSongMetadata(metadata);
         } catch (SongServiceIntegrationException e) {
-            // Компенсирующее действие: откатываем сохранение ресурса,
-            // чтобы не оставлять "битую" запись без метаданных.
             resourceRepository.delete(saved);
             throw e;
         }
@@ -69,6 +71,13 @@ public class ResourceServiceImpl implements ResourceService {
         }
 
         return existingIds;
+    }
+
+    private void validateContentType(String contentType) {
+        if (contentType == null || !contentType.equalsIgnoreCase(MP3_CONTENT_TYPE)) {
+            throw new InvalidMp3FileException(
+                    "Invalid file format: " + contentType + ". Only MP3 files are allowed");
+        }
     }
 
     private void validateId(Long id) {

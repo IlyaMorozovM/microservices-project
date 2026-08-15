@@ -3,6 +3,7 @@ package com.example.resourceservice.controller;
 import com.example.resourceservice.dto.IdResponseDto;
 import com.example.resourceservice.dto.IdsResponseDto;
 import com.example.resourceservice.service.ResourceService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,9 +21,11 @@ public class ResourceController {
 
     private final ResourceService resourceService;
 
-    @PostMapping(value = "/resources", consumes = "audio/mpeg")
-    public ResponseEntity<IdResponseDto> uploadResource(@RequestBody byte[] audioData) {
-        Long id = resourceService.uploadResource(audioData);
+    @PostMapping("/resources")
+    public ResponseEntity<IdResponseDto> uploadResource(@RequestBody byte[] audioData,
+                                                        HttpServletRequest request) {
+        String contentType = request.getContentType();
+        Long id = resourceService.uploadResource(audioData, contentType);
         return ResponseEntity.ok(new IdResponseDto(id));
     }
 
