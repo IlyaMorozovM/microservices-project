@@ -28,7 +28,7 @@ public class SongServiceImpl implements SongService {
     @Transactional
     public Long createSong(SongRequestDto dto) {
         if (songRepository.existsById(dto.getId())) {
-            throw new ConflictException("Song metadata with ID=" + dto.getId() + " already exists");
+            throw new ConflictException("Metadata for resource ID=" + dto.getId() + " already exists");
         }
         Song song = songMapper.toEntity(dto);
         Song saved = songRepository.save(song);
@@ -39,7 +39,7 @@ public class SongServiceImpl implements SongService {
     public SongResponseDto getSongById(Long id) {
         validateId(id);
         Song song = songRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Song metadata with ID=" + id + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Song metadata for ID=" + id + " not found"));
         return songMapper.toResponseDto(song);
     }
 
@@ -55,7 +55,7 @@ public class SongServiceImpl implements SongService {
 
     private void validateId(Long id) {
         if (id == null || id <= 0) {
-            throw new BadRequestException("Id must be a positive number");
+            throw new BadRequestException("Invalid value '" + id + "' for ID. Must be a positive integer");
         }
     }
 
@@ -64,7 +64,9 @@ public class SongServiceImpl implements SongService {
             throw new BadRequestException("Id list must not be empty");
         }
         if (csv.length() > MAX_CSV_LENGTH) {
-            throw new BadRequestException("Id list length must not exceed " + MAX_CSV_LENGTH + " characters");
+            throw new BadRequestException(
+                    "CSV string is too long: received " + csv.length()
+                            + " characters, maximum allowed is " + MAX_CSV_LENGTH);
         }
 
         String[] parts = csv.split(",");
@@ -72,7 +74,7 @@ public class SongServiceImpl implements SongService {
         for (String part : parts) {
             String trimmed = part.trim();
             if (!trimmed.matches("\\d+")) {
-                throw new BadRequestException("Id list contains invalid value: '" + trimmed + "'");
+                throw new BadRequestException("Invalid ID format: '" + trimmed + "'. Only positive integers are allowed");
             }
             ids.add(Long.parseLong(trimmed));
         }

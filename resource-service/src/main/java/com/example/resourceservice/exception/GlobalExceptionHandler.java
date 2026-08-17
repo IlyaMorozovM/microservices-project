@@ -12,7 +12,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponseDto> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        String message = "Parameter '" + ex.getName() + "' must be a valid number";
+        String message = "Invalid value '" + ex.getValue() + "' for ID. Must be a positive integer";
         ErrorResponseDto error = new ErrorResponseDto(
                 message,
                 String.valueOf(HttpStatus.BAD_REQUEST.value())

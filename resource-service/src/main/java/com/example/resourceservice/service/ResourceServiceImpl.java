@@ -82,7 +82,7 @@ public class ResourceServiceImpl implements ResourceService {
 
     private void validateId(Long id) {
         if (id == null || id <= 0) {
-            throw new BadRequestException("Id must be a positive number");
+            throw new BadRequestException("Invalid value '" + id + "' for ID. Must be a positive integer");
         }
     }
 
@@ -91,7 +91,9 @@ public class ResourceServiceImpl implements ResourceService {
             throw new BadRequestException("Id list must not be empty");
         }
         if (csv.length() > MAX_CSV_LENGTH) {
-            throw new BadRequestException("Id list length must not exceed " + MAX_CSV_LENGTH + " characters");
+            throw new BadRequestException(
+                    "CSV string is too long: received " + csv.length()
+                            + " characters, maximum allowed is " + MAX_CSV_LENGTH);
         }
 
         String[] parts = csv.split(",");
@@ -99,7 +101,7 @@ public class ResourceServiceImpl implements ResourceService {
         for (String part : parts) {
             String trimmed = part.trim();
             if (!trimmed.matches("\\d+")) {
-                throw new BadRequestException("Id list contains invalid value: '" + trimmed + "'");
+                throw new BadRequestException("Invalid ID format: '" + trimmed + "'. Only positive integers are allowed");
             }
             ids.add(Long.parseLong(trimmed));
         }
