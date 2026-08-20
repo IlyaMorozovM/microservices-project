@@ -11,12 +11,15 @@ import org.springframework.web.client.RestClientException;
 @RequiredArgsConstructor
 public class SongServiceClient {
 
-    private final RestClient songServiceRestClient;
+    private static final String SONG_SERVICE_BASE_URL = "http://song-service";
+
+    private final RestClient.Builder loadBalancedRestClientBuilder;
 
     public void createSongMetadata(SongMetadataDto metadata) {
         try {
-            songServiceRestClient.post()
-                    .uri("/songs")
+            loadBalancedRestClientBuilder.build()
+                    .post()
+                    .uri(SONG_SERVICE_BASE_URL + "/songs")
                     .body(metadata)
                     .retrieve()
                     .toBodilessEntity();
@@ -28,8 +31,9 @@ public class SongServiceClient {
 
     public void deleteSongMetadata(Long id) {
         try {
-            songServiceRestClient.delete()
-                    .uri("/songs?id={id}", id)
+            loadBalancedRestClientBuilder.build()
+                    .delete()
+                    .uri(SONG_SERVICE_BASE_URL + "/songs?id={id}", id)
                     .retrieve()
                     .toBodilessEntity();
         } catch (RestClientException e) {
