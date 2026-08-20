@@ -1,30 +1,61 @@
 services:
-  resource-service-db:
+
+  resource-db:
     image: postgres:16-alpine
-    container_name: resource-service-db
+    container_name: resource-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: resource_service_db
-      POSTGRES_USER: resource_user
-      POSTGRES_PASSWORD: resource_pass
+      POSTGRES_DB: ${RESOURCE_DB_NAME}
+      POSTGRES_USER: ${RESOURCE_DB_USER}
+      POSTGRES_PASSWORD: ${RESOURCE_DB_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
-      - resource_service_data:/var/lib/postgresql/data
+      - ./init-scripts/resource-db:/docker-entrypoint-initdb.d
 
-  song-service-db:
+  song-db:
     image: postgres:16-alpine
-    container_name: song-service-db
+    container_name: song-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: song_service_db
-      POSTGRES_USER: song_user
-      POSTGRES_PASSWORD: song_pass
+      POSTGRES_DB: ${SONG_DB_NAME}
+      POSTGRES_USER: ${SONG_DB_USER}
+      POSTGRES_PASSWORD: ${SONG_DB_PASSWORD}
     ports:
       - "5434:5432"
     volumes:
-      - song_service_data:/var/lib/postgresql/data
+      - ./init-scripts/song-db:/docker-entrypoint-initdb.d
 
-volumes:
-  resource_service_data:
-  song_service_data:
+  resource-service:
+    build:
+      context: .
+      dockerfile: resource-service/Dockerfile
+    container_name: resource-service
+    restart: unless-stopped
+    depends_on:
+      - resource-db
+      - song-service
+    environment:
+      SERVER_PORT: ${RESOURCE_SERVICE_PORT}
+      SPRING_DATASOURCE_URL: ${RESOURCE_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${RESOURCE_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${RESOURCE_DB_PASSWORD}
+      SONG_SERVICE_URL: ${SONG_SERVICE_URL}
+    ports:
+      - "${RESOURCE_SERVICE_PORT}:${RESOURCE_SERVICE_PORT}"
+
+  song-service:
+    build:
+      context: .
+      dockerfile: song-service/Dockerfile
+    container_name: song-service
+    restart: unless-stopped
+    depends_on:
+      - song-db
+    environment:
+      SERVER_PORT: ${SONG_SERVICE_PORT}
+      SPRING_DATASOURCE_URL: ${SONG_DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${SONG_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${SONG_DB_PASSWORD}
+    ports:
+      - "${SONG_SERVICE_PORT}:${SONG_SERVICE_PORT}"
