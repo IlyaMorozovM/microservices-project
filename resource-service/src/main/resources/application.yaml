@@ -27,3 +27,10 @@ eureka:
   instance:
     lease-renewal-interval-in-seconds: 5
     prefer-ip-address: true
+
+s3:
+  endpoint: ${S3_ENDPOINT:http://localhost:4566}
+  bucket-name: ${S3_BUCKET_NAME:resource-files-bucket}
+  region: ${S3_REGION:us-east-1}
+  access-key: ${S3_ACCESS_KEY:test}
+  secret-key: ${S3_SECRET_KEY:test}

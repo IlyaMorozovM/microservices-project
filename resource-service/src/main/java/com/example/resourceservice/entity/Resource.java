@@ -23,6 +23,6 @@ public class Resource {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "data", nullable = false, columnDefinition = "bytea")
-    private byte[] data;
+    @Column(name = "storage_key", nullable = false, length = 255)
+    private String storageKey;
 }

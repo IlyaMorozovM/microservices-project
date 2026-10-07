@@ -71,3 +71,15 @@ services:
       EUREKA_URL: ${EUREKA_URL}
     ports:
       - "${SONG_SERVICE_PORT}"
+
+  localstack:
+    image: localstack/localstack:3.8
+    container_name: localstack
+    restart: unless-stopped
+    environment:
+      - SERVICES=s3
+      - DEFAULT_REGION=us-east-1
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./init-scripts/localstack:/etc/localstack/init/ready.d
