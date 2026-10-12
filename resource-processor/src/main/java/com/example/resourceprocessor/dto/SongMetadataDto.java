@@ -1,4 +1,4 @@
-package com.example.resourceservice.dto;
+package com.example.resourceprocessor.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
