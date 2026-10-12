@@ -1,12 +1,10 @@
 package com.example.resourceservice.service;
 
 import com.example.resourceservice.client.SongServiceClient;
-import com.example.resourceservice.dto.SongMetadataDto;
 import com.example.resourceservice.entity.Resource;
 import com.example.resourceservice.exception.BadRequestException;
 import com.example.resourceservice.exception.InvalidMp3FileException;
 import com.example.resourceservice.exception.ResourceNotFoundException;
-import com.example.resourceservice.exception.SongServiceIntegrationException;
 import com.example.resourceservice.repository.ResourceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,7 +21,7 @@ public class ResourceServiceImpl implements ResourceService {
     private static final String MP3_CONTENT_TYPE = "audio/mpeg";
 
     private final ResourceRepository resourceRepository;
-    private final Mp3MetadataExtractor metadataExtractor;
+    private final S3StorageService s3StorageService;
     private final SongServiceClient songServiceClient;
 
     @Override
@@ -31,22 +29,17 @@ public class ResourceServiceImpl implements ResourceService {
     public Long uploadResource(byte[] audioData, String contentType) {
         validateContentType(contentType);
 
-        SongMetadataDto metadata = metadataExtractor.extract(audioData);
-
-        Resource resource = new Resource();
-        resource.setData(audioData);
-        Resource saved = resourceRepository.save(resource);
-
-        metadata.setId(saved.getId());
+        String storageKey = s3StorageService.upload(audioData);
 
         try {
-            songServiceClient.createSongMetadata(metadata);
-        } catch (SongServiceIntegrationException e) {
-            resourceRepository.delete(saved);
+            Resource resource = new Resource();
+            resource.setStorageKey(storageKey);
+            Resource saved = resourceRepository.save(resource);
+            return saved.getId();
+        } catch (RuntimeException e) {
+            s3StorageService.delete(storageKey);
             throw e;
         }
-
-        return saved.getId();
     }
 
     @Override
@@ -54,7 +47,7 @@ public class ResourceServiceImpl implements ResourceService {
         validateId(id);
         Resource resource = resourceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Resource with ID=" + id + " not found"));
-        return resource.getData();
+        return s3StorageService.download(resource.getStorageKey());
     }
 
     @Override
@@ -63,6 +56,10 @@ public class ResourceServiceImpl implements ResourceService {
         List<Long> ids = parseAndValidateCsv(csv);
         List<Resource> existingResources = resourceRepository.findAllByIdIn(ids);
         List<Long> existingIds = existingResources.stream().map(Resource::getId).toList();
+
+        for (Resource resource : existingResources) {
+            s3StorageService.delete(resource.getStorageKey());
+        }
 
         resourceRepository.deleteAll(existingResources);
 
@@ -101,7 +98,7 @@ public class ResourceServiceImpl implements ResourceService {
         for (String part : parts) {
             String trimmed = part.trim();
             if (!trimmed.matches("\\d+")) {
-                throw new BadRequestException("Invalid ID format: '" + trimmed + "'. Only positive integers are allowed");
+                throw new BadRequestException("Id list contains invalid value: '" + trimmed + "'");
             }
             ids.add(Long.parseLong(trimmed));
         }

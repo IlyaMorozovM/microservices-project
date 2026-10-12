@@ -1,7 +1,7 @@
-package com.example.resourceservice.service;
+package com.example.resourceprocessor.service;
 
-import com.example.resourceservice.dto.SongMetadataDto;
-import com.example.resourceservice.exception.InvalidMp3FileException;
+import com.example.resourceprocessor.dto.SongMetadataDto;
+import com.example.resourceprocessor.exception.InvalidMp3FileException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
