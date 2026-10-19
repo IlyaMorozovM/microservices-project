@@ -5,6 +5,7 @@ import com.example.resourceservice.entity.Resource;
 import com.example.resourceservice.exception.BadRequestException;
 import com.example.resourceservice.exception.InvalidMp3FileException;
 import com.example.resourceservice.exception.ResourceNotFoundException;
+import com.example.resourceservice.messaging.ResourceEventPublisher;
 import com.example.resourceservice.repository.ResourceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class ResourceServiceImpl implements ResourceService {
     private final ResourceRepository resourceRepository;
     private final S3StorageService s3StorageService;
     private final SongServiceClient songServiceClient;
+    private final ResourceEventPublisher resourceEventPublisher;
 
     @Override
     @Transactional
@@ -31,15 +33,20 @@ public class ResourceServiceImpl implements ResourceService {
 
         String storageKey = s3StorageService.upload(audioData);
 
+        Long resourceId;
         try {
             Resource resource = new Resource();
             resource.setStorageKey(storageKey);
             Resource saved = resourceRepository.save(resource);
-            return saved.getId();
+            resourceId = saved.getId();
         } catch (RuntimeException e) {
             s3StorageService.delete(storageKey);
             throw e;
         }
+
+        resourceEventPublisher.publishResourceCreated(resourceId);
+
+        return resourceId;
     }
 
     @Override
