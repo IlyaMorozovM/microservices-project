@@ -19,6 +19,12 @@ spring:
       hibernate:
         format_sql: true
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
 eureka:
   client:
     service-url:
@@ -34,3 +40,8 @@ s3:
   region: ${S3_REGION:us-east-1}
   access-key: ${S3_ACCESS_KEY:test}
   secret-key: ${S3_SECRET_KEY:test}
+
+rabbitmq:
+  exchange: ${RESOURCE_PROCESSING_EXCHANGE:resource.processing.exchange}
+  queue: ${RESOURCE_PROCESSING_QUEUE:resource.processing.queue}
+  routing-key: ${RESOURCE_PROCESSING_ROUTING_KEY:resource.processing.key}
