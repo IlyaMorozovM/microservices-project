@@ -1,3 +1,5 @@
+package contracts.songs
+
 import org.springframework.cloud.contract.spec.Contract
 
 Contract.make {

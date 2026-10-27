@@ -29,7 +29,7 @@ public class ResourceEventPublisher {
         rabbitTemplate.convertAndSend(
                 rabbitMqProperties.getExchange(),
                 rabbitMqProperties.getRoutingKey(),
-                resourceId);
+                new ResourceCreatedEvent(resourceId));
     }
 
     @Recover

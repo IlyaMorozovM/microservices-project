@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
         "spring.cloud.discovery.client.simple.instances.song-service[0].uri=http://localhost:8090"
 })
 @AutoConfigureStubRunner(
-        ids = "com.example:song-service:+:stubs:8090",
+        ids = "com.example:song-service:0.0.1:stubs:8090",
         stubsMode = StubRunnerProperties.StubsMode.LOCAL)
 class SongServiceClientContractTest {
 

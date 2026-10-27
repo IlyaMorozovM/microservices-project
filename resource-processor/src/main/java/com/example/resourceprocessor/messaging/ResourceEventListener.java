@@ -19,7 +19,8 @@ public class ResourceEventListener {
     private final SongServiceClient songServiceClient;
 
     @RabbitListener(queues = "${rabbitmq.queue}")
-    public void handleResourceCreated(Long resourceId) {
+    public void handleResourceCreated(ResourceCreatedEvent event) {
+        Long resourceId = event.resourceId();
         log.info("Received resource processing event for resourceId={}", resourceId);
 
         byte[] resourceData = resourceServiceClient.getResourceData(resourceId);
