@@ -13,3 +13,10 @@ Feature: Resource upload
     When the client uploads a file with content type "application/json"
     Then the response status should be 400
     And the response should contain an error message about invalid file format
+
+  Scenario: End-to-end resource processing flow
+    Given the storage service is available
+    When the client uploads a valid MP3 file
+    Then the response status should be 200
+    And the response should contain a generated resource id
+    And a resource created event should be published

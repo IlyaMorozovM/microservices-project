@@ -110,4 +110,10 @@ public class ResourceUploadStepDefinitions {
 
         assertThat(content).contains("Invalid file format");
     }
+
+    @And("a resource created event should be published")
+    public void aResourceCreatedEventShouldBePublished() {
+        org.mockito.Mockito.verify(resourceEventPublisher)
+                .publishResourceCreated(org.mockito.ArgumentMatchers.anyLong());
+    }
 }
