@@ -92,7 +92,6 @@ services:
     build:
       context: .
       dockerfile: resource-service/Dockerfile
-    container_name: resource-service
     restart: unless-stopped
     depends_on:
       resource-db:
@@ -121,8 +120,8 @@ services:
       RESOURCE_PROCESSING_EXCHANGE: ${RESOURCE_PROCESSING_EXCHANGE}
       RESOURCE_PROCESSING_QUEUE: ${RESOURCE_PROCESSING_QUEUE}
       RESOURCE_PROCESSING_ROUTING_KEY: ${RESOURCE_PROCESSING_ROUTING_KEY}
-    ports:
-      - "${RESOURCE_SERVICE_PORT}:${RESOURCE_SERVICE_PORT}"
+    expose:
+      - "${RESOURCE_SERVICE_PORT}"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:$${SERVER_PORT}/actuator/health | grep -q UP || exit 1"]
       interval: 10s
@@ -181,6 +180,31 @@ services:
       - "${RESOURCE_PROCESSOR_PORT}:${RESOURCE_PROCESSOR_PORT}"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:$${SERVER_PORT}/actuator/health | grep -q UP || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    restart: unless-stopped
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      resource-service:
+        condition: service_healthy
+      song-service:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: ${API_GATEWAY_PORT}
+      EUREKA_URL: ${EUREKA_URL}
+    ports:
+      - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://127.0.0.1:$${SERVER_PORT}/actuator/health | grep -q UP || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 10
