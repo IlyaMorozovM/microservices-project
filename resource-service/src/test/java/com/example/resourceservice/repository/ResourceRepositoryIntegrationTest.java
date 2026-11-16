@@ -1,6 +1,7 @@
 package com.example.resourceservice.repository;
 
 import com.example.resourceservice.entity.Resource;
+import com.example.resourceservice.entity.StorageType;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,14 +41,20 @@ class ResourceRepositoryIntegrationTest {
     void findAllByIdIn_shouldReturnOnlyMatchingResources() {
         Resource resource1 = new Resource();
         resource1.setStorageKey("resources/key1.mp3");
+        resource1.setBucket("staging-bucket");
+        resource1.setStorageType(StorageType.STAGING);
         Resource saved1 = resourceRepository.save(resource1);
 
         Resource resource2 = new Resource();
         resource2.setStorageKey("resources/key2.mp3");
+        resource2.setBucket("staging-bucket");
+        resource2.setStorageType(StorageType.STAGING);
         Resource saved2 = resourceRepository.save(resource2);
 
         Resource resource3 = new Resource();
         resource3.setStorageKey("resources/key3.mp3");
+        resource3.setBucket("staging-bucket");
+        resource3.setStorageType(StorageType.STAGING);
         resourceRepository.save(resource3);
 
         List<Resource> result = resourceRepository.findAllByIdIn(
@@ -63,6 +70,8 @@ class ResourceRepositoryIntegrationTest {
     void save_shouldPersistResourceWithGeneratedId() {
         Resource resource = new Resource();
         resource.setStorageKey("resources/new-key.mp3");
+        resource.setBucket("staging-bucket");
+        resource.setStorageType(StorageType.STAGING);
 
         Resource saved = resourceRepository.save(resource);
 

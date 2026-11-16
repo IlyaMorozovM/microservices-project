@@ -5,6 +5,7 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -25,7 +26,7 @@ public class RabbitMqConfig {
 
     @Bean
     public Queue resourceProcessingQueue() {
-        return org.springframework.amqp.core.QueueBuilder
+        return QueueBuilder
                 .durable(rabbitMqProperties.getQueue())
                 .withArgument("x-dead-letter-exchange", "")
                 .withArgument("x-dead-letter-routing-key", rabbitMqProperties.getQueue() + ".dlq")
@@ -43,6 +44,33 @@ public class RabbitMqConfig {
                 .bind(resourceProcessingQueue())
                 .to(resourceProcessingExchange())
                 .with(rabbitMqProperties.getRoutingKey());
+    }
+
+    @Bean
+    public DirectExchange resourceProcessedExchange() {
+        return new DirectExchange(rabbitMqProperties.getProcessedExchange());
+    }
+
+    @Bean
+    public Queue resourceProcessedQueue() {
+        return QueueBuilder
+                .durable(rabbitMqProperties.getProcessedQueue())
+                .withArgument("x-dead-letter-exchange", "")
+                .withArgument("x-dead-letter-routing-key", rabbitMqProperties.getProcessedQueue() + ".dlq")
+                .build();
+    }
+
+    @Bean
+    public Queue resourceProcessedDeadLetterQueue() {
+        return new Queue(rabbitMqProperties.getProcessedQueue() + ".dlq", true);
+    }
+
+    @Bean
+    public Binding resourceProcessedBinding() {
+        return BindingBuilder
+                .bind(resourceProcessedQueue())
+                .to(resourceProcessedExchange())
+                .with(rabbitMqProperties.getProcessedRoutingKey());
     }
 
     @Bean

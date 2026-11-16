@@ -31,3 +31,6 @@ rabbitmq:
   exchange: ${RESOURCE_PROCESSING_EXCHANGE:resource.processing.exchange}
   queue: ${RESOURCE_PROCESSING_QUEUE:resource.processing.queue}
   routing-key: ${RESOURCE_PROCESSING_ROUTING_KEY:resource.processing.key}
+  processed-exchange: ${RESOURCE_PROCESSED_EXCHANGE:resource.processed.exchange}
+  processed-queue: ${RESOURCE_PROCESSED_QUEUE:resource.processed.queue}
+  processed-routing-key: ${RESOURCE_PROCESSED_ROUTING_KEY:resource.processed.key}

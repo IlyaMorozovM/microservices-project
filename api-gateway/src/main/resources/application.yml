@@ -24,6 +24,13 @@ spring:
           filters:
             - RewritePath=/api/songs(?<segment>/?.*), /songs${segment}
 
+        - id: storage-service
+          uri: lb://storage-service
+          predicates:
+            - Path=/api/storages, /api/storages/**
+          filters:
+            - RewritePath=/api/storages(?<segment>/?.*), /storages${segment}
+
 eureka:
   client:
     service-url:
