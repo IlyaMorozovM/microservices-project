@@ -13,4 +13,7 @@ public class RabbitMqProperties {
     private String exchange;
     private String queue;
     private String routingKey;
+    private String processedExchange;
+    private String processedQueue;
+    private String processedRoutingKey;
 }

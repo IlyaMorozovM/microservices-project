@@ -1,7 +1,10 @@
 package com.example.resourceservice.service;
 
 import com.example.resourceservice.client.SongServiceClient;
+import com.example.resourceservice.client.StorageServiceClient;
+import com.example.resourceservice.client.dto.StorageResponseDto;
 import com.example.resourceservice.entity.Resource;
+import com.example.resourceservice.entity.StorageType;
 import com.example.resourceservice.exception.InvalidMp3FileException;
 import com.example.resourceservice.exception.ResourceNotFoundException;
 import com.example.resourceservice.messaging.ResourceEventPublisher;
@@ -18,12 +21,15 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ResourceServiceImplTest {
+
+    private static final String STAGING_BUCKET = "staging-bucket";
 
     @Mock
     private ResourceRepository resourceRepository;
@@ -35,33 +41,41 @@ class ResourceServiceImplTest {
     private SongServiceClient songServiceClient;
 
     @Mock
+    private StorageServiceClient storageServiceClient;
+
+    @Mock
     private ResourceEventPublisher resourceEventPublisher;
 
     @InjectMocks
     private ResourceServiceImpl resourceService;
 
     private byte[] audioData;
+    private StorageResponseDto stagingStorage;
 
     @BeforeEach
     void setUp() {
         audioData = new byte[]{1, 2, 3};
+        stagingStorage = new StorageResponseDto(1L, "STAGING", STAGING_BUCKET, "/files");
     }
 
     @Test
     void uploadResource_shouldSaveResourceAndPublishEvent_whenContentTypeIsValid() {
         String storageKey = "resources/generated-key.mp3";
-        when(s3StorageService.upload(audioData)).thenReturn(storageKey);
+        when(storageServiceClient.getStorageByType(StorageType.STAGING.name())).thenReturn(stagingStorage);
+        when(s3StorageService.upload(audioData, STAGING_BUCKET)).thenReturn(storageKey);
 
         Resource savedResource = new Resource();
         savedResource.setId(42L);
         savedResource.setStorageKey(storageKey);
+        savedResource.setBucket(STAGING_BUCKET);
+        savedResource.setStorageType(StorageType.STAGING);
         when(resourceRepository.save(any(Resource.class))).thenReturn(savedResource);
 
         Long resultId = resourceService.uploadResource(audioData, "audio/mpeg");
 
         assertThat(resultId).isEqualTo(42L);
         verify(resourceEventPublisher).publishResourceCreated(42L);
-        verify(s3StorageService, never()).delete(any());
+        verify(s3StorageService, never()).delete(anyString(), anyString());
     }
 
     @Test
@@ -70,14 +84,15 @@ class ResourceServiceImplTest {
                 .isInstanceOf(InvalidMp3FileException.class)
                 .hasMessageContaining("Invalid file format");
 
-        verify(s3StorageService, never()).upload(any());
+        verify(s3StorageService, never()).upload(any(), anyString());
         verify(resourceRepository, never()).save(any());
     }
 
     @Test
     void uploadResource_shouldDeleteFromS3_whenDatabaseSaveFails() {
         String storageKey = "resources/generated-key.mp3";
-        when(s3StorageService.upload(audioData)).thenReturn(storageKey);
+        when(storageServiceClient.getStorageByType(StorageType.STAGING.name())).thenReturn(stagingStorage);
+        when(s3StorageService.upload(audioData, STAGING_BUCKET)).thenReturn(storageKey);
         when(resourceRepository.save(any(Resource.class)))
                 .thenThrow(new RuntimeException("DB connection lost"));
 
@@ -85,7 +100,7 @@ class ResourceServiceImplTest {
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("DB connection lost");
 
-        verify(s3StorageService).delete(storageKey);
+        verify(s3StorageService).delete(storageKey, STAGING_BUCKET);
         verify(resourceEventPublisher, never()).publishResourceCreated(any());
     }
 
@@ -103,10 +118,12 @@ class ResourceServiceImplTest {
         Resource resource1 = new Resource();
         resource1.setId(1L);
         resource1.setStorageKey("resources/key1.mp3");
+        resource1.setBucket(STAGING_BUCKET);
 
         Resource resource2 = new Resource();
         resource2.setId(2L);
         resource2.setStorageKey("resources/key2.mp3");
+        resource2.setBucket(STAGING_BUCKET);
 
         when(resourceRepository.findAllByIdIn(java.util.List.of(1L, 2L)))
                 .thenReturn(java.util.List.of(resource1, resource2));
@@ -114,8 +131,8 @@ class ResourceServiceImplTest {
         var deletedIds = resourceService.deleteResourcesByIds("1,2");
 
         assertThat(deletedIds).containsExactly(1L, 2L);
-        verify(s3StorageService).delete("resources/key1.mp3");
-        verify(s3StorageService).delete("resources/key2.mp3");
+        verify(s3StorageService).delete("resources/key1.mp3", STAGING_BUCKET);
+        verify(s3StorageService).delete("resources/key2.mp3", STAGING_BUCKET);
         verify(resourceRepository).deleteAll(java.util.List.of(resource1, resource2));
         verify(songServiceClient).deleteSongMetadata(1L);
         verify(songServiceClient).deleteSongMetadata(2L);

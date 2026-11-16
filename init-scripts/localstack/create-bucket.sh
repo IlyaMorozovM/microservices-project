@@ -1,2 +1,3 @@
 #!/bin/bash
-awslocal s3 mb s3://resource-files-bucket
+awslocal s3 mb s3://staging-bucket
+awslocal s3 mb s3://permanent-bucket

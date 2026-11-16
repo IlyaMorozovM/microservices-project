@@ -1,12 +1,12 @@
 package com.example.resourceservice.service;
 
-import com.example.resourceservice.config.S3Properties;
 import com.example.resourceservice.exception.StorageException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
@@ -24,14 +24,13 @@ public class S3StorageService {
     private static final String KEY_SUFFIX = ".mp3";
 
     private final S3Client s3Client;
-    private final S3Properties s3Properties;
 
-    public String upload(byte[] data) {
+    public String upload(byte[] data, String bucket) {
         String key = KEY_PREFIX + UUID.randomUUID() + KEY_SUFFIX;
 
         try {
             PutObjectRequest request = PutObjectRequest.builder()
-                    .bucket(s3Properties.getBucketName())
+                    .bucket(bucket)
                     .key(key)
                     .contentType("audio/mpeg")
                     .build();
@@ -43,10 +42,10 @@ public class S3StorageService {
         }
     }
 
-    public byte[] download(String key) {
+    public byte[] download(String key, String bucket) {
         try {
             GetObjectRequest request = GetObjectRequest.builder()
-                    .bucket(s3Properties.getBucketName())
+                    .bucket(bucket)
                     .key(key)
                     .build();
 
@@ -60,16 +59,32 @@ public class S3StorageService {
         }
     }
 
-    public void delete(String key) {
+    public void delete(String key, String bucket) {
         try {
             DeleteObjectRequest request = DeleteObjectRequest.builder()
-                    .bucket(s3Properties.getBucketName())
+                    .bucket(bucket)
                     .key(key)
                     .build();
 
             s3Client.deleteObject(request);
         } catch (S3Exception e) {
             throw new StorageException("Failed to delete file from cloud storage", e);
+        }
+    }
+
+    public void move(String key, String sourceBucket, String destinationBucket) {
+        try {
+            CopyObjectRequest copyRequest = CopyObjectRequest.builder()
+                    .sourceBucket(sourceBucket)
+                    .sourceKey(key)
+                    .destinationBucket(destinationBucket)
+                    .destinationKey(key)
+                    .build();
+
+            s3Client.copyObject(copyRequest);
+            delete(key, sourceBucket);
+        } catch (S3Exception e) {
+            throw new StorageException("Failed to move file between storage locations", e);
         }
     }
 }

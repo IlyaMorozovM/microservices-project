@@ -9,4 +9,6 @@ public interface ResourceService {
     byte[] getResourceById(Long id);
 
     List<Long> deleteResourcesByIds(String csv);
+
+    void markResourceAsProcessed(Long resourceId);
 }

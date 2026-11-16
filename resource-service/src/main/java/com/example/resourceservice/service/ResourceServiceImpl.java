@@ -1,19 +1,24 @@
 package com.example.resourceservice.service;
 
 import com.example.resourceservice.client.SongServiceClient;
+import com.example.resourceservice.client.StorageServiceClient;
+import com.example.resourceservice.client.dto.StorageResponseDto;
 import com.example.resourceservice.entity.Resource;
+import com.example.resourceservice.entity.StorageType;
 import com.example.resourceservice.exception.BadRequestException;
 import com.example.resourceservice.exception.InvalidMp3FileException;
 import com.example.resourceservice.exception.ResourceNotFoundException;
 import com.example.resourceservice.messaging.ResourceEventPublisher;
 import com.example.resourceservice.repository.ResourceRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResourceServiceImpl implements ResourceService {
@@ -24,6 +29,7 @@ public class ResourceServiceImpl implements ResourceService {
     private final ResourceRepository resourceRepository;
     private final S3StorageService s3StorageService;
     private final SongServiceClient songServiceClient;
+    private final StorageServiceClient storageServiceClient;
     private final ResourceEventPublisher resourceEventPublisher;
 
     @Override
@@ -31,16 +37,19 @@ public class ResourceServiceImpl implements ResourceService {
     public Long uploadResource(byte[] audioData, String contentType) {
         validateContentType(contentType);
 
-        String storageKey = s3StorageService.upload(audioData);
+        StorageResponseDto staging = storageServiceClient.getStorageByType(StorageType.STAGING.name());
+        String storageKey = s3StorageService.upload(audioData, staging.bucket());
 
         Long resourceId;
         try {
             Resource resource = new Resource();
             resource.setStorageKey(storageKey);
+            resource.setBucket(staging.bucket());
+            resource.setStorageType(StorageType.STAGING);
             Resource saved = resourceRepository.save(resource);
             resourceId = saved.getId();
         } catch (RuntimeException e) {
-            s3StorageService.delete(storageKey);
+            s3StorageService.delete(storageKey, staging.bucket());
             throw e;
         }
 
@@ -54,7 +63,7 @@ public class ResourceServiceImpl implements ResourceService {
         validateId(id);
         Resource resource = resourceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Resource with ID=" + id + " not found"));
-        return s3StorageService.download(resource.getStorageKey());
+        return s3StorageService.download(resource.getStorageKey(), resource.getBucket());
     }
 
     @Override
@@ -65,7 +74,7 @@ public class ResourceServiceImpl implements ResourceService {
         List<Long> existingIds = existingResources.stream().map(Resource::getId).toList();
 
         for (Resource resource : existingResources) {
-            s3StorageService.delete(resource.getStorageKey());
+            s3StorageService.delete(resource.getStorageKey(), resource.getBucket());
         }
 
         resourceRepository.deleteAll(existingResources);
@@ -75,6 +84,27 @@ public class ResourceServiceImpl implements ResourceService {
         }
 
         return existingIds;
+    }
+
+    @Override
+    @Transactional
+    public void markResourceAsProcessed(Long resourceId) {
+        Resource resource = resourceRepository.findById(resourceId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Resource with ID=" + resourceId + " not found"));
+
+        if (resource.getStorageType() == StorageType.PERMANENT) {
+            log.info("Resource with ID={} is already in permanent storage, skipping", resourceId);
+            return;
+        }
+
+        StorageResponseDto permanent = storageServiceClient.getStorageByType(StorageType.PERMANENT.name());
+
+        s3StorageService.move(resource.getStorageKey(), resource.getBucket(), permanent.bucket());
+
+        resource.setBucket(permanent.bucket());
+        resource.setStorageType(StorageType.PERMANENT);
+        resourceRepository.save(resource);
     }
 
     private void validateContentType(String contentType) {

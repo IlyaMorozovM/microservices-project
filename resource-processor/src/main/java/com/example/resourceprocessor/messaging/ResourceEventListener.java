@@ -17,6 +17,7 @@ public class ResourceEventListener {
     private final ResourceServiceClient resourceServiceClient;
     private final Mp3MetadataExtractor metadataExtractor;
     private final SongServiceClient songServiceClient;
+    private final ResourceProcessedEventPublisher resourceProcessedEventPublisher;
 
     @RabbitListener(queues = "${rabbitmq.queue}")
     public void handleResourceCreated(ResourceCreatedEvent event) {
@@ -29,6 +30,8 @@ public class ResourceEventListener {
         metadata.setId(resourceId);
 
         songServiceClient.createSongMetadata(metadata);
+
+        resourceProcessedEventPublisher.publishResourceProcessed(resourceId);
 
         log.info("Successfully processed resourceId={}", resourceId);
     }

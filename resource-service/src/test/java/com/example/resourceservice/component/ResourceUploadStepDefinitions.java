@@ -1,5 +1,7 @@
 package com.example.resourceservice.component;
 
+import com.example.resourceservice.client.StorageServiceClient;
+import com.example.resourceservice.client.dto.StorageResponseDto;
 import com.example.resourceservice.messaging.ResourceEventPublisher;
 import com.example.resourceservice.service.S3StorageService;
 import io.cucumber.java.Before;
@@ -8,7 +10,6 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.cucumber.spring.CucumberContextConfiguration;
-import org.junit.jupiter.api.BeforeAll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -22,6 +23,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
@@ -55,6 +57,9 @@ public class ResourceUploadStepDefinitions {
     private S3StorageService s3StorageService;
 
     @MockitoBean
+    private StorageServiceClient storageServiceClient;
+
+    @MockitoBean
     private ResourceEventPublisher resourceEventPublisher;
 
     private MockMvc mockMvc;
@@ -67,7 +72,10 @@ public class ResourceUploadStepDefinitions {
 
     @Given("the storage service is available")
     public void theStorageServiceIsAvailable() {
-        when(s3StorageService.upload(any()))
+        when(storageServiceClient.getStorageByType(anyString()))
+                .thenReturn(new StorageResponseDto(1L, "STAGING", "staging-bucket", "/files"));
+
+        when(s3StorageService.upload(any(), anyString()))
                 .thenReturn("resources/generated-key.mp3");
     }
 
