@@ -7,6 +7,7 @@ import com.example.songservice.dto.SongResponseDto;
 import com.example.songservice.service.SongService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class SongController {
@@ -24,6 +26,7 @@ public class SongController {
 
     @PostMapping("/songs")
     public ResponseEntity<IdResponseDto> createSong(@Valid @RequestBody SongRequestDto dto) {
+        log.info("Received request to create song metadata");
         Long id = songService.createSong(dto);
         return ResponseEntity.ok(new IdResponseDto(id));
     }

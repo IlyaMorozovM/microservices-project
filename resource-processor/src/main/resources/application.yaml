@@ -34,3 +34,15 @@ rabbitmq:
   processed-exchange: ${RESOURCE_PROCESSED_EXCHANGE:resource.processed.exchange}
   processed-queue: ${RESOURCE_PROCESSED_QUEUE:resource.processed.queue}
   processed-routing-key: ${RESOURCE_PROCESSED_ROUTING_KEY:resource.processed.key}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  tracing:
+    sampling:
+      probability: 1.0
