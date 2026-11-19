@@ -2,9 +2,12 @@ package com.example.resourceservice.messaging;
 
 import com.example.resourceservice.config.RabbitMqProperties;
 import com.example.resourceservice.exception.MessagingException;
+import com.example.resourceservice.tracing.TracingConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.amqp.AmqpException;
+import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
@@ -26,10 +29,21 @@ public class ResourceEventPublisher {
     )
     public void publishResourceCreated(Long resourceId) {
         log.info("Publishing resource created event for resourceId={}", resourceId);
+
+        String traceId = MDC.get(TracingConstants.TRACE_ID_MDC_KEY);
+
+        MessagePostProcessor processor = message -> {
+            if (traceId != null) {
+                message.getMessageProperties().setHeader(TracingConstants.TRACE_ID_HEADER, traceId);
+            }
+            return message;
+        };
+
         rabbitTemplate.convertAndSend(
                 rabbitMqProperties.getExchange(),
                 rabbitMqProperties.getRoutingKey(),
-                new ResourceCreatedEvent(resourceId));
+                new ResourceCreatedEvent(resourceId),
+                processor);
     }
 
     @Recover

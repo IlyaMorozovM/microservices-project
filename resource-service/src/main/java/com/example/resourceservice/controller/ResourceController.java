@@ -5,6 +5,7 @@ import com.example.resourceservice.dto.IdsResponseDto;
 import com.example.resourceservice.service.ResourceService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class ResourceController {
@@ -31,6 +33,7 @@ public class ResourceController {
 
     @GetMapping(value = "/resources/{id}", produces = "audio/mpeg")
     public ResponseEntity<byte[]> getResource(@PathVariable Long id) {
+        log.info("Received request to fetch resource data for resourceId={}", id);
         byte[] audioData = resourceService.getResourceById(id);
         return ResponseEntity.ok()
                 .contentType(MediaType.valueOf("audio/mpeg"))
